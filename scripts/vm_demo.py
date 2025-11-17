@@ -19,11 +19,11 @@ print("[ENV] VM_DB_USER:", VM_DB_USER)
 print("[ENV] VM_DB_NAME:", VM_DB_NAME)
 
 # Step 1: Connect to server (no DB) and ensure database exists
-server_url = f"mysql+pymysql://{VM_DB_USER}:{VM_DB_PASS}@{VM_DB_HOST}:{VM_DB_PORT}/?ssl=false"
+server_url = f"mysql+pymysql://{VM_DB_USER}:{VM_DB_PASS}@{VM_DB_HOST}:{VM_DB_PORT}"
 print("[STEP 1] Connecting to VM MySQL (no DB):", server_url.replace(VM_DB_PASS, "*****"))
 t0 = time.time()
 
-engine_server = create_engine(server_url, pool_pre_ping=True)
+engine_server = create_engine(server_url, pool_pre_ping=True, connect_args={"ssl": None})
 with engine_server.connect() as conn:
     conn.execute(text(f"CREATE DATABASE IF NOT EXISTS `{VM_DB_NAME}`"))
     conn.commit()
@@ -31,7 +31,7 @@ print(f"[OK] Ensured database `{VM_DB_NAME}` exists.")
 
 # Step 2: Connect to target database
 ### Ignore ssl_connection for VM setup
-db_url = f"mysql+pymysql://{VM_DB_USER}:{VM_DB_PASS}@{VM_DB_HOST}:{VM_DB_PORT}/{VM_DB_NAME}?ssl=false"
+db_url = f"mysql+pymysql://{VM_DB_USER}:{VM_DB_PASS}@{VM_DB_HOST}:{VM_DB_PORT}/{VM_DB_NAME}"
 engine = create_engine(db_url)
 
 # Step 3: Create DataFrame and write to a table
@@ -46,7 +46,7 @@ df = pd.DataFrame(
     ]
 )
 
-df.to_sql(table_name, con=engine, if_exists="replace", index=False, connect_args={"ssl": {"ssl_disabled": True}})
+df.to_sql(table_name, con=engine, if_exists="replace", index=False)
 
 # Step 4) Read back a quick check
 print("[STEP 4] Reading back row count ...")
