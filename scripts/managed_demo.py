@@ -5,7 +5,7 @@ from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
-load_dotenv("../.env") # Adjust the path as necessary
+load_dotenv(".env", override=True) # Adjust the path as necessary
 
 MAN_DB_HOST = os.getenv("MAN_DB_HOST")
 MAN_DB_PORT = os.getenv("MAN_DB_PORT", "3306")
@@ -18,20 +18,26 @@ print("[ENV] MAN_DB_PORT:", MAN_DB_PORT)
 print("[ENV] MAN_DB_USER:", MAN_DB_USER)
 print("[ENV] MAN_DB_NAME:", MAN_DB_NAME)
 
+
 # Step 1: Connect to Managed MySQL and ensure database exists
-server_url = f"mysql+pymysql://{MAN_DB_USER}:{MAN_DB_PASS}@{MAN_DB_HOST}:{MAN_DB_PORT}/{MAN_DB_NAME}?ssl=false"
+server_url = f"mysql+pymysql://{MAN_DB_USER}:{MAN_DB_PASS}@{MAN_DB_HOST}:{MAN_DB_PORT}"
 print("[STEP 1] Connecting to Managed MySQL (no DB):", server_url.replace(MAN_DB_PASS, "*****"))
 t0 = time.time()
 
-engine_server = create_engine(server_url, pool_pre_ping=True)
+engine_server = create_engine(
+    server_url,
+    connect_args={"ssl": None},
+    pool_pre_ping=True
+)
+
 with engine_server.connect() as conn:
     conn.execute(text(f"CREATE DATABASE IF NOT EXISTS `{MAN_DB_NAME}`"))
     conn.commit()
-print(f"[OK] Ensured database `{MAN_DB_NAME}` exists on managed instance.")
+print(f"[OK] Ensured database `{MAN_DB_NAME}` exists.")
 
 # Step 2: Connect to the specific database
-db_url = f"mysql+pymysql://{MAN_DB_USER}:{MAN_DB_PASS}@{MAN_DB_HOST}:{MAN_DB_PORT}/{MAN_DB_NAME}?ssl=false"
-engine = create_engine(db_url, pool_pre_ping=True)
+db_url = f"mysql+pymysql://{MAN_DB_USER}:{MAN_DB_PASS}@{MAN_DB_HOST}:{MAN_DB_PORT}/{MAN_DB_NAME}"
+engine = create_engine(db_url, connect_args={"ssl": None})
 
 # Create a DataFrame and write to a table
 table_name = "visits"
@@ -43,10 +49,8 @@ df = pd.DataFrame(
         {"patient_id": 14, "visit_date": "2025-10-05", "bp_sys": 126, "bp_dia": 83},
     ]
 )
-print("[STEP 3] Writing DataFrame to table:", table_name)
-with engine.begin() as conn:
-    df.to_sql(table_name, con=conn, if_exists="replace", index=False)
-print("[OK] Wrote DataFrame to table.")
+
+df.to_sql(table_name, con=engine, if_exists="replace", index=False)
 
 # --- 4) Read back a quick check ---
 print("[STEP 4] Reading back row count ...")
