@@ -45,3 +45,15 @@ mysql+pymysql://anthonym:*****@34.63.66.209:3306
 ```
 mysql+pymysql://anthonym:*****@34.61.117.69:3306
 ```
+# Screenshots
+- VM Final Table
+![VM table](screenshots/vm/vmtables.png)
+
+- Managed Final Table
+![Managed table](screenshots/managed/tables.png)
+
+- Had to install cryptography because SQLAlchemy + PyMySQL depend on it to handle secure connection features, even when connecting to MySQL without explicitly configuring SSL certificates.
+```
+pip install cryptography
+```
+![crypt](screenshots/general/cryptography.png)
